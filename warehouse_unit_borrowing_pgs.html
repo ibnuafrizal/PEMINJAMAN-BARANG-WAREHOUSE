@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PT PGS | Warehouse Unit Borrowing</title>
+<style>
+:root{--navy:#14243a;--blue:#2563eb;--bg:#f3f6fa;--line:#e5eaf1;--muted:#64748b;--green:#15803d;--amber:#b45309;--red:#b91c1c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px "Segoe UI",Arial,sans-serif;color:#172033}
+header{background:var(--navy);color:white;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:18px;font-weight:700;letter-spacing:.3px}.brand small{display:block;font-size:11px;font-weight:400;color:#cbd5e1;margin-top:4px}
+header .tag{font-size:12px;color:#dbeafe;border:1px solid #49617d;border-radius:20px;padding:7px 12px}
+.layout{display:flex;min-height:calc(100vh - 66px)}nav{width:225px;background:white;border-right:1px solid var(--line);padding:18px 12px}
+nav button{width:100%;text-align:left;background:transparent;border:0;padding:12px;border-radius:8px;color:#334155;cursor:pointer;font-weight:600;margin:3px 0}
+nav button.active,nav button:hover{background:#eaf1ff;color:#1d4ed8}
+main{padding:26px;flex:1;max-width:1500px;margin:auto;width:100%}
+h1{font-size:23px;margin:0 0 6px} .sub{color:var(--muted);margin-bottom:22px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+.card,.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:17px;box-shadow:0 2px 7px #0f172a08}
+.card .label{color:var(--muted);font-size:12px}.card .num{font-size:28px;font-weight:700;margin-top:7px}
+.panel{margin-bottom:18px}.panel h2{font-size:16px;margin:0 0 15px}
+.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:13px;flex-wrap:wrap}
+button,.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:white;cursor:pointer;font-weight:600}
+button.secondary{background:#e8edf5;color:#334155}button.danger{background:#fee2e2;color:#991b1b}button.success{background:#dcfce7;color:#166534}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:7px;background:white;font:inherit;color:#172033}
+label{display:block;font-size:12px;font-weight:700;color:#475569;margin:0 0 6px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field.full{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13px}th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.tablewrap{overflow:auto}.pill{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:700}.available{background:#dcfce7;color:#166534}.borrowed{background:#fef3c7;color:#92400e}.late{background:#fee2e2;color:#991b1b}.muted{color:var(--muted)}
+.actions{display:flex;gap:6px}.actions button{padding:7px 9px;font-size:11px}
+.hidden{display:none!important}.empty{text-align:center;color:var(--muted);padding:26px}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.search{max-width:270px}.topactions{display:flex;gap:8px;flex-wrap:wrap}
+footer{text-align:center;color:#94a3b8;font-size:11px;padding:18px}
+@media(max-width:850px){.layout{display:block}nav{width:100%;display:flex;overflow:auto;padding:8px}nav button{white-space:nowrap;width:auto}.cards{grid-template-columns:repeat(2,1fr)}main{padding:16px}.formgrid{grid-template-columns:1fr}}
+@media print{header,nav,.no-print,footer{display:none!important}.layout{display:block}main{padding:0}.panel,.card{box-shadow:none}}
+</style></head>
+<body>
+<header><div class="brand">PT PGS <small>WAREHOUSE UNIT BORROWING SYSTEM</small></div><div class="tag">LOCAL WAREHOUSE SYSTEM · OFFLINE</div></header>
+<div class="layout">
+<nav>
+<button class="active" data-page="dashboard">▦ &nbsp; Dashboard</button>
+<button data-page="units">▣ &nbsp; Data Master Unit</button>
+<button data-page="borrow">＋ &nbsp; Peminjaman Unit</button>
+<button data-page="returns">↩ &nbsp; Pengembalian</button>
+<button data-page="history">☷ &nbsp; Riwayat Transaksi</button>
+</nav>
+<main>
+<section id="dashboard" class="page">
+<h1>Dashboard Warehouse</h1><div class="sub">Ringkasan persediaan dan aktivitas peminjaman unit.</div>
+<div class="cards">
+<div class="card"><div class="label">Total Unit Terdaftar</div><div class="num" id="totalUnits">0</div></div>
+<div class="card"><div class="label">Unit Tersedia</div><div class="num" id="availableUnits">0</div></div>
+<div class="card"><div class="label">Sedang Dipinjam</div><div class="num" id="borrowedUnits">0</div></div>
+<div class="card"><div class="label">Belum Kembali / Terlambat</div><div class="num" id="lateUnits">0</div></div>
+</div>
+<div class="panel"><div class="toolbar"><h2>Aktivitas Peminjaman Terbaru</h2><button class="secondary no-print" onclick="showPage('history')">Lihat semua</button></div><div id="recentTable"></div></div>
+<div class="panel"><h2>Catatan Penggunaan</h2><div class="note">Aplikasi ini menyimpan data di browser komputer Warehouse ini. Gunakan menu Data Master Unit untuk mendaftarkan unit sebelum transaksi. Lakukan backup data secara berkala melalui tombol Ekspor Backup.</div></div>
+</section>
+<section id="units" class="page hidden">
+<h1>Data Master Unit</h1><div class="sub">Daftarkan unit/peralatan yang dapat dipinjam.</div>
+<div class="panel"><h2 id="unitFormTitle">Tambah Unit Baru</h2><form id="unitForm" class="formgrid">
+<input type="hidden" id="unitId">
+<div class="field"><label>Kode Unit *</label><input id="unitCode" required placeholder="Contoh: PGS-INS-001"></div>
+<div class="field"><label>Nama Unit *</label><input id="unitName" required placeholder="Contoh: Drager X-AM 5000"></div>
+<div class="field"><label>Serial Number</label><input id="unitSerial" placeholder="Nomor seri"></div>
+<div class="field"><label>Jumlah Unit *</label><input id="unitQty" type="number" min="1" value="1" required></div>
+<div class="field"><label>Kondisi</label><select id="unitCondition"><option>Baik</option><option>Perlu Pemeriksaan</option><option>Rusak</option></select></div>
+<div class="field"><label>Lokasi Penyimpanan</label><input id="unitLocation" placeholder="Contoh: Rak A-01"></div>
+<div class="field full"><label>Keterangan</label><textarea id="unitNotes" rows="2"></textarea></div>
+<div class="field full topactions"><button type="submit">Simpan Unit</button><button type="button" class="secondary" onclick="resetUnitForm()">Bersihkan Form</button></div>
+</form></div>
+<div class="panel"><div class="toolbar"><h2>Daftar Unit</h2><div class="topactions"><input class="search" id="unitSearch" placeholder="Cari kode / nama unit..." oninput="renderUnits()"><button class="secondary" onclick="exportBackup()">Ekspor Backup</button><button class="secondary" onclick="document.getElementById('importFile').click()">Impor Backup</button><input id="importFile" type="file" accept=".json" class="hidden" onchange="importBackup(event)"></div></div><div id="unitsTable"></div></div>
+</section>
+<section id="borrow" class="page hidden">
+<h1>Peminjaman Unit</h1><div class="sub">Catat identitas peminjam, unit, dan rencana pengembalian.</div>
+<div class="panel"><h2>Form Peminjaman</h2><form id="borrowForm" class="formgrid">
+<div class="field"><label>Nama Peminjam *</label><input id="borrower" required placeholder="Nama karyawan"></div>
+<div class="field"><label>Departemen *</label><select id="department" required><option value="">Pilih departemen</option><option>Operation</option><option>Admin</option><option>Service</option><option>PAS</option><option>Sales</option><option>Lainnya</option></select></div>
+<div class="field"><label>Nama Unit *</label><select id="borrowUnit" required><option value="">Pilih unit</option></select></div>
+<div class="field"><label>Jumlah Dipinjam *</label><input id="borrowQty" type="number" min="1" value="1" required></div>
+<div class="field"><label>Tanggal Pinjam *</label><input id="borrowDate" type="date" required></div>
+<div class="field"><label>Rencana Kembali *</label><input id="dueDate" type="date" required></div>
+<div class="field full"><label>Keperluan *</label><textarea id="purpose" rows="2" required placeholder="Contoh: pekerjaan lapangan / inspeksi"></textarea></div>
+<div class="field full"><label>Catatan / Kelengkapan</label><textarea id="borrowNotes" rows="2" placeholder="Aksesori, kondisi saat keluar, dan lain-lain"></textarea></div>
+<div class="field full"><button type="submit">Simpan Peminjaman</button></div>
+</form></div>
+</section>
+<section id="returns" class="page hidden">
+<h1>Pengembalian Unit</h1><div class="sub">Proses pengembalian dan catat kondisi unit saat diterima kembali.</div>
+<div class="panel"><div class="toolbar"><h2>Daftar Peminjaman Aktif</h2><input id="returnSearch" class="search" placeholder="Cari peminjam / unit..." oninput="renderReturns()"></div><div id="returnsTable"></div></div>
+</section>
+<section id="history" class="page hidden">
+<h1>Riwayat Transaksi</h1><div class="sub">Seluruh catatan peminjaman dan pengembalian.</div>
+<div class="panel"><div class="toolbar"><h2>Histori</h2><div class="topactions"><input id="historySearch" class="search" placeholder="Cari nama / unit / kode..." oninput="renderHistory()"><button onclick="exportCSV()">Ekspor Excel (CSV)</button><button class="secondary" onclick="window.print()">Cetak</button></div></div><div id="historyTable"></div></div>
+</section>
+<footer>PT PGS · Warehouse Unit Borrowing System · Data tersimpan lokal pada browser ini</footer>
+</main></div>
+<script>
+const KEY='pgs_warehouse_borrow_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"units":[],"transactions":[]}');
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function today(){return new Date().toISOString().slice(0,10)}
+function showPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(p).classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));renderAll()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+function activeQty(unitId){return db.transactions.filter(t=>t.unitId===unitId&&!t.returnedAt).reduce((s,t)=>s+t.qty,0)}
+function available(u){return Math.max(0,u.qty-activeQty(u.id))}
+function status(t){return t.returnedAt?'Dikembalikan':(t.dueDate<today()?'Terlambat':'Dipinjam')}
+function pill(t){let s=status(t),c=s==='Dikembalikan'?'available':s==='Terlambat'?'late':'borrowed';return `<span class="pill ${c}">${s}</span>`}
+function renderDashboard(){
+$('totalUnits').textContent=db.units.reduce((s,u)=>s+u.qty,0);
+$('availableUnits').textContent=db.units.reduce((s,u)=>s+available(u),0);
+$('borrowedUnits').textContent=db.transactions.filter(t=>!t.returnedAt).reduce((s,t)=>s+t.qty,0);
+$('lateUnits').textContent=db.transactions.filter(t=>!t.returnedAt&&t.dueDate<today()).reduce((s,t)=>s+t.qty,0);
+let rows=[...db.transactions].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,6);
+$('recentTable').innerHTML=rows.length?table(['Tanggal','Peminjam','Unit','Qty','Status'],rows.map(t=>[t.borrowDate,esc(t.borrower),esc(t.unitName),t.qty,pill(t)])):'<div class="empty">Belum ada transaksi peminjaman.</div>';
+}
+function table(headers,rows){return `<div class="tablewrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
+function renderUnits(){
+let q=($('unitSearch')?.value||'').toLowerCase();
+let arr=db.units.filter(u=>(u.code+' '+u.name+' '+u.serial).toLowerCase().includes(q));
+$('unitsTable').innerHTML=arr.length?table(['Kode','Nama Unit','Serial Number','Total','Tersedia','Dipinjam','Kondisi','Lokasi','Aksi'],arr.map(u=>[esc(u.code),esc(u.name),esc(u.serial||'-'),u.qty,available(u),activeQty(u.id),esc(u.condition),esc(u.location||'-'),`<div class="actions"><button class="secondary" onclick="editUnit('${u.id}')">Edit</button><button class="danger" onclick="deleteUnit('${u.id}')">Hapus</button></div>`])):'<div class="empty">Belum ada data unit.</div>';
+$('borrowUnit').innerHTML='<option value="">Pilih unit</option>'+db.units.filter(u=>available(u)>0&&u.condition==='Baik').map(u=>`<option value="${u.id}">${esc(u.code)} — ${esc(u.name)} (tersedia ${available(u)})</option>`).join('');
+}
+function renderReturns(){
+let q=($('returnSearch')?.value||'').toLowerCase(),arr=db.transactions.filter(t=>!t.returnedAt&&(t.borrower+' '+t.unitName+' '+t.code).toLowerCase().includes(q));
+$('returnsTable').innerHTML=arr.length?table(['No. Transaksi','Peminjam','Departemen','Unit','Qty','Tgl Pinjam','Batas Kembali','Status','Aksi'],arr.map(t=>[esc(t.id),esc(t.borrower),esc(t.department),esc(t.unitName),t.qty,t.borrowDate,t.dueDate,pill(t),`<button class="success" onclick="returnUnit('${t.id}')">Proses Kembali</button>`])):'<div class="empty">Tidak ada unit yang sedang dipinjam.</div>';
+}
+function renderHistory(){
+let q=($('historySearch')?.value||'').toLowerCase(),arr=[...db.transactions].reverse().filter(t=>(t.id+' '+t.borrower+' '+t.unitName+' '+t.code+' '+t.department).toLowerCase().includes(q));
+$('historyTable').innerHTML=arr.length?table(['No. Transaksi','Peminjam','Departemen','Unit','Qty','Tgl Pinjam','Batas Kembali','Tgl Kembali','Status','Keperluan'],arr.map(t=>[esc(t.id),esc(t.borrower),esc(t.department),esc(t.unitName),t.qty,t.borrowDate,t.dueDate,t.returnedAt||'-',pill(t),esc(t.purpose)])):'<div class="empty">Belum ada riwayat transaksi.</div>';
+}
+function renderAll(){renderDashboard();renderUnits();renderReturns();renderHistory()}
+function resetUnitForm(){$('unitForm').reset();$('unitId').value='';$('unitQty').value=1;$('unitFormTitle').textContent='Tambah Unit Baru'}
+$('unitForm').onsubmit=e=>{e.preventDefault();let id=$('unitId').value,old=db.units.find(u=>u.id===id),qty=Number($('unitQty').value);if(old&&qty<activeQty(id)){alert('Jumlah total tidak boleh lebih kecil dari unit yang sedang dipinjam.');return}
+let u={id:id||crypto.randomUUID(),code:$('unitCode').value.trim(),name:$('unitName').value.trim(),serial:$('unitSerial').value.trim(),qty,condition:$('unitCondition').value,location:$('unitLocation').value.trim(),notes:$('unitNotes').value.trim()};
+if(db.units.some(x=>x.code.toLowerCase()===u.code.toLowerCase()&&x.id!==u.id)){alert('Kode unit sudah digunakan.');return}
+if(old)Object.assign(old,u);else db.units.push(u);resetUnitForm();save();alert('Data unit berhasil disimpan.')};
+function editUnit(id){let u=db.units.find(x=>x.id===id);$('unitId').value=u.id;$('unitCode').value=u.code;$('unitName').value=u.name;$('unitSerial').value=u.serial;$('unitQty').value=u.qty;$('unitCondition').value=u.condition;$('unitLocation').value=u.location;$('unitNotes').value=u.notes;$('unitFormTitle').textContent='Edit Data Unit';window.scrollTo(0,0)}
+function deleteUnit(id){if(activeQty(id)){alert('Unit masih memiliki peminjaman aktif.');return}if(confirm('Hapus unit ini?')){db.units=db.units.filter(u=>u.id!==id);save()}}
+$('borrowDate').value=today();$('dueDate').value=today();
+$('borrowForm').onsubmit=e=>{e.preventDefault();let u=db.units.find(x=>x.id===$('borrowUnit').value),qty=Number($('borrowQty').value),bd=$('borrowDate').value,dd=$('dueDate').value;if(!u){alert('Pilih unit terlebih dahulu.');return}if(qty<1||qty>available(u)){alert('Jumlah melebihi stok yang tersedia. Tersedia: '+available(u));return}if(dd<bd){alert('Tanggal kembali tidak boleh sebelum tanggal pinjam.');return}
+let t={id:'PGS-'+Date.now(),unitId:u.id,code:u.code,unitName:u.name,borrower:$('borrower').value.trim(),department:$('department').value,qty,borrowDate:bd,dueDate:dd,purpose:$('purpose').value.trim(),notes:$('borrowNotes').value.trim(),createdAt:new Date().toISOString(),returnedAt:null,returnCondition:null,returnNotes:null};
+db.transactions.push(t);$('borrowForm').reset();$('borrowDate').value=today();$('dueDate').value=today();save();alert('Peminjaman berhasil dicatat. No. transaksi: '+t.id);showPage('returns')};
+function returnUnit(id){let t=db.transactions.find(x=>x.id===id),cond=prompt('Kondisi unit saat kembali? (Baik / Perlu Pemeriksaan / Rusak)','Baik');if(cond===null)return;let note=prompt('Catatan pengembalian (opsional):','')??'';if(!confirm('Konfirmasi unit sudah diterima kembali?'))return;t.returnedAt=today();t.returnCondition=cond;t.returnNotes=note;save();alert('Pengembalian berhasil dicatat.')}
+function exportCSV(){let rows=[['No Transaksi','Kode Unit','Nama Unit','Peminjam','Departemen','Qty','Tgl Pinjam','Batas Kembali','Tgl Kembali','Status','Keperluan','Kondisi Kembali'],...db.transactions.map(t=>[t.id,t.code,t.unitName,t.borrower,t.department,t.qty,t.borrowDate,t.dueDate,t.returnedAt||'',status(t),t.purpose,t.returnCondition||''])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Laporan_Peminjaman_PGS.csv','text/csv;charset=utf-8;')}
+function exportBackup(){download(JSON.stringify(db,null,2),'Backup_Warehouse_PGS_'+today()+'.json','application/json')}
+function importBackup(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.units)||!Array.isArray(d.transactions))throw Error();if(confirm('Impor akan mengganti seluruh data saat ini. Lanjutkan?')){db=d;save();alert('Backup berhasil diimpor.')}}catch{alert('File backup tidak valid.')}e.target.value=''};r.readAsText(f)}
+function download(content,name,type){let a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+renderAll();
+</script></body></html>
